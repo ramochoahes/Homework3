@@ -1,0 +1,110 @@
+%matplotlib inline
+import numpy as np
+import pandas as pd
+import scipy.stats as stats
+import matplotlib.pyplot as plt
+import statsmodels.api as sm
+import seaborn as sns
+import itertools
+
+from sklearn import cross_validation
+from sklearn.cross_validation import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn import metrics
+
+from sklearn.datasets import load_boston
+from sklearn.linear_model import LinearRegression
+
+# read and clean csv
+X = pd.read_csv("/Users/ramiroochoa/Desktop/HW3/trainingData.csv",sep='\t',header=None)
+X = X.fillna(0) ## imputing nan's as 0
+
+X.describe()
+
+#bins = [-1,5.39,9.32,17]
+#group_names = ['Low', 'Medium', 'High']
+bins = [-1,.026,2]# you must have one more bin than group names
+group_names = ['Low',  'High']
+X[2] = pd.cut(X[2], bins, labels=group_names)
+X.head()
+
+#Frequency count (%) for the '0' variable
+#X[0]
+100 * X[0].value_counts() / len(X[0]) # X[0] is the column to evaluate
+                                      # returns object containing counts of unique values.
+                                      # The resulting object will be in descending order so that the first 
+                                      # element is the most frequently-occurring element. Excludes NA values by default.
+                                      
+y = X[2].map({'Low': 0, 'High': 1 })#drop values column 2
+X.drop(2,axis=1, inplace=True)
+
+#Cross validation
+#Split into training and validation set
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.15, random_state=10)#Split arrays or matrices into random train and test subsets
+print (X.shape, X_train.shape, X_test.shape)
+
+X_train.head()
+
+y_train = y_train.fillna(0)# remove nan values from y_train
+y_test = y_test.fillna(0)# remove nan values from y_test
+
+
+# Decision Tree Classifier - note: import statement at the top of Notebook!
+# You can try changing: criterion='entropy': The function to measure the quality of a split
+
+# random_state is the random number generator
+# max depth is how far the tree can grow 
+# The goal is to create a model that predicts the value of a target variable by learning simple decision rules inferred from the data features.
+
+dtclf = DecisionTreeClassifier(criterion='gini', random_state=37,max_depth=5)
+dtclf.fit(X_train, y_train)
+
+y_pred_dt = dtclf.predict(X_test)
+#print (y_pred_dt == y_test)
+print()
+
+DT_predprobability = dtclf.predict_proba(X_test)
+print (metrics.accuracy_score(y_test, y_pred_dt))
+
+target_names = ["Sales_Low", "Sales_High"]
+
+def show_confusion_matrix(cm):
+    plt.figure(figsize=(5, 5))
+    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.binary)
+    plt.title('Confusion matrix')
+    plt.set_cmap('Blues')
+    plt.colorbar()
+    tick_marks = np.arange(len(target_names))
+    plt.xticks(tick_marks, target_names, rotation=60)
+    plt.yticks(tick_marks, target_names)
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.show()
+
+confusion_matrix = metrics.confusion_matrix(y_test, y_pred_dt)
+print (confusion_matrix)
+show_confusion_matrix(confusion_matrix)
+#y_test = True Labels = 36 Sales Low, 24 Sales High
+#y_pred_dt = Predicted Labels = 37 Sales Low, 23 Sales High
+
+import pydotplus
+from sklearn.externals.six import StringIO 
+from sklearn import tree
+
+dot_data=StringIO()
+tree.export_graphviz(dtclf, out_file=dot_data, feature_names = X.columns)
+
+importance = pd.DataFrame({'feature': X.columns, 'importance': dtclf.feature_importances_})
+importance.sort_values(['importance', 'feature'], ascending=[0, 1], inplace=True)
+
+sns.set_style("whitegrid")
+ax = sns.barplot(x="importance", y="feature", data=importance)
+for i, v in enumerate(importance.importance):
+    ax.text(v + .01, i +.20, '%1.3f'%v, color='gray', fontweight='bold')
+plt.show()
+
+graph = pydotplus.graph_from_dot_data(dot_data.getvalue())
+#graph.write_pdf("/Users/ramiroochoa/Desktop/tree1.pdf")
+
+from IPython.display import Image #needed to render in notebook
+Image(graph.create_png())
