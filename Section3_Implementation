@@ -66,7 +66,7 @@ print()
 DT_predprobability = dtclf.predict_proba(X_test)
 print (metrics.accuracy_score(y_test, y_pred_dt))
 
-target_names = ["Sales_Low", "Sales_High"]
+target_names = ["#Low", "#High"]
 
 def show_confusion_matrix(cm):
     plt.figure(figsize=(5, 5))
@@ -108,3 +108,23 @@ graph = pydotplus.graph_from_dot_data(dot_data.getvalue())
 
 from IPython.display import Image #needed to render in notebook
 Image(graph.create_png())
+
+ds = range(1,20)
+test_acc = np.zeros(len(ds))
+
+for i, d in enumerate(ds):
+    # create a model with training data 
+    clf = DecisionTreeClassifier(criterion='gini', max_depth=d, random_state=37).fit(X_train, y_train)
+    # now score it on the test data set
+    test_acc[i] = clf.score(X_test, y_test)
+    
+fig, ax = plt.subplots(1,1)
+fig.set_size_inches(12,8)
+
+ax.plot(ds, test_acc, lw=2, label = 'test accuracy')
+ax.legend(loc=0)
+
+plt.title('Model Performance')
+plt.ylabel('Accuracy score')
+plt.xlabel('Max Depth')
+plt.show()
