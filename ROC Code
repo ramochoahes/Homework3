@@ -1,0 +1,24 @@
+# Compute ROC curve and Area Under the Curve
+# A score for a perfect classifier would be an AUC of 1
+fpr, tpr, thresholds = roc_curve(y_test, probas_[:, 1])
+roc_auc = auc(fpr, tpr) 
+plt.plot(fpr, tpr, lw=1, label='ROC max depth: %d, min samples: %d \n(AUC = %0.3f)' % (clf.max_depth, clf.min_samples_leaf, roc_auc))
+
+plt.plot([0, 1], [0, 1], '--', color=(0.6, 0.6, 0.6), label='Luck')
+
+plt.xlim([-0.05, 1.05])
+plt.ylim([-0.05, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver operating characteristic example')
+plt.legend(loc="lower right")
+plt.show()
+
+import numpy as np
+from sklearn import metrics
+y = np.array([1, 1, 2, 2])
+scores = np.array([0.1, 0.4, 0.35, 0.8])
+fpr, tpr, thresholds = metrics.roc_curve(y, scores, pos_label=2)
+print(fpr) #array([ 0. ,  0.5,  0.5,  1. ])
+print(tpr) #array([ 0.5,  0.5,  1. ,  1. ])
+thresholds #array([ 0.8 ,  0.4 ,  0.35,  0.1 ])
